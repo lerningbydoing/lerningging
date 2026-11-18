@@ -1,749 +1,618 @@
 <!DOCTYPE html>
-<html lang="de" class="dark">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Vokabel-Master: Psyche, Geist & Verhalten</title>
+    <title>Vokabel-Master Pro • Perfekt</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation;
-        }
-        /* Smooth Card Flip Animation */
-        .perspective-1000 {
-            perspective: 1000px;
-        }
-        .transform-style-3d {
-            transform-style: preserve-3d;
-            transition: transform 0.5s cubic-bezier(0.4, 0.2, 0.2, 1);
-        }
-        .rotate-y-180 {
-            transform: rotateY(180deg);
-        }
-        .backface-hidden {
-            backface-visibility: hidden;
-            -webkit-backface-visibility: hidden;
-        }
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #0f172a;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #334155;
-            border-radius: 9999px;
-        }
+        body { -webkit-tap-highlight-color: transparent; }
+        .perspective { perspective: 1000px; }
+        .preserve-3d { transform-style: preserve-3d; transition: transform 0.5s; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        .backface-hidden { backface-visibility: hidden; }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans select-none">
 
-    <!-- Top Navigation & Progress Bar -->
-    <header class="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-20 px-4 py-3.5">
-        <div class="max-w-lg mx-auto">
-            <div class="flex justify-between items-center mb-2">
-                <button onclick="goHome()" class="flex items-center gap-2 text-left group focus:outline-none">
-                    <span class="text-xl">🧠</span>
-                    <div>
-                        <h1 class="text-sm sm:text-base font-bold bg-gradient-to-r from-indigo-400 via-cyan-400 to-emerald-400 bg-clip-text text-transparent">
-                            Vokabel-Master
-                        </h1>
-                        <p class="text-[11px] text-slate-400 leading-none">4.1 Gefühle & Verhalten</p>
-                    </div>
-                </button>
-
-                <div id="header-stats" class="hidden flex items-center gap-2">
-                    <span id="round-indicator" class="hidden text-[11px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-full">
-                        🔁 Wiederholung
-                    </span>
-                    <span id="progress-text" class="text-xs font-bold bg-slate-800 text-indigo-300 border border-slate-700 px-3 py-1 rounded-full">
-                        0 / 40
-                    </span>
-                </div>
+    <!-- Header -->
+    <header class="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-20 px-4 py-3">
+        <div class="max-w-lg mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <span class="text-xl">🔥</span>
+                <h1 class="font-bold text-base sm:text-lg bg-gradient-to-r from-indigo-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
+                    Vokabel-Master
+                </h1>
             </div>
-
-            <!-- Animated Progress Bar -->
-            <div id="progress-bar-wrapper" class="hidden w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                <div id="progress-bar" class="bg-gradient-to-r from-indigo-500 to-emerald-400 h-full rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
+            <div class="flex items-center gap-1.5">
+                <button onclick="openHomeGuide()" class="bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/40 text-indigo-300 text-xs font-semibold px-2.5 py-1.5 rounded-full flex items-center gap-1 transition active:scale-95" title="Zum Homescreen hinzufügen">
+                    <span>📱</span> App
+                </button>
+                <button onclick="openCustomModal()" class="bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/40 text-purple-300 text-xs font-semibold px-2.5 py-1.5 rounded-full flex items-center gap-1 transition active:scale-95" title="Codenames Editor">
+                    <span>✏️</span> Editor
+                </button>
+                <button onclick="openScannerModal()" class="bg-cyan-600/20 hover:bg-cyan-600/30 border border-cyan-500/40 text-cyan-300 text-xs font-semibold px-2.5 py-1.5 rounded-full flex items-center gap-1 transition active:scale-95" title="Foto scannen">
+                    <span>📷</span> Scan
+                </button>
+                <span id="mastered-counter" class="text-xs font-semibold bg-emerald-950 text-emerald-400 border border-emerald-800/60 px-2 py-1.5 rounded-full">
+                    0/40
+                </span>
             </div>
         </div>
     </header>
 
-    <!-- Main App Container -->
-    <main class="flex-grow flex items-center justify-center p-4">
-        <div class="w-full max-w-lg">
+    <!-- Controls Bar -->
+    <div class="bg-slate-900 border-b border-slate-800 px-4 py-2 space-y-2">
+        <div class="max-w-lg mx-auto flex justify-between items-center text-xs">
+            <div class="flex gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800">
+                <button onclick="setLang('en')" id="lang-en" class="px-2.5 py-1 rounded font-semibold transition bg-indigo-600 text-white">🇬🇧 Englisch</button>
+                <button onclick="setLang('es')" id="lang-es" class="px-2.5 py-1 rounded font-semibold transition text-slate-400 hover:text-white">🇪🇸 Spanisch</button>
+            </div>
+            <span id="set-title-badge" class="text-slate-400 font-medium truncate max-w-[150px]">Set: Psyche</span>
+        </div>
+        <div class="max-w-lg mx-auto grid grid-cols-3 gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+            <button onclick="setMode('mc')" id="tab-mc" class="py-2 text-xs font-semibold rounded-lg transition bg-indigo-600 text-white shadow">🎯 Auswahl</button>
+            <button onclick="setMode('type')" id="tab-type" class="py-2 text-xs font-semibold rounded-lg transition text-slate-400 hover:text-white">✍️ Tippen</button>
+            <button onclick="setMode('cards')" id="tab-cards" class="py-2 text-xs font-semibold rounded-lg transition text-slate-400 hover:text-white">🗂️ Karten</button>
+        </div>
+    </div>
 
-            <!-- 1. START SCREEN (MODE SELECTION) -->
-            <section id="start-screen" class="space-y-6 animate-fade-in">
-                <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl">
-                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-semibold mb-4">
-                        <span>🍬</span> Multisensorisches Active-Recall-System
-                    </div>
-                    <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mb-2">
-                        Alle 40 Vokabeln meistern
-                    </h2>
-                    <p class="text-sm text-slate-400 leading-relaxed mb-6">
-                        Wähle deine Lernmethode. Wörter, bei denen du unsicher bist, kommen automatisch in derselben Runde wieder, bis sie bombenfest sitzen!
-                    </p>
+    <!-- Main Content -->
+    <main class="flex-grow flex flex-col justify-center p-4 max-w-lg w-full mx-auto">
 
-                    <!-- Learning Modes -->
-                    <div class="space-y-3">
-                        <!-- Mode 1: Multiple Choice -->
-                        <button onclick="startSession('mc')" class="w-full text-left p-4 sm:p-5 rounded-2xl bg-slate-800/80 hover:bg-slate-800 active:scale-[0.99] border border-slate-700/80 hover:border-indigo-500/50 transition-all group flex items-center justify-between gap-4">
-                            <div class="flex items-start gap-3.5">
-                                <div class="w-11 h-11 rounded-xl bg-indigo-500/15 text-indigo-400 flex items-center justify-center text-xl shrink-0 mt-0.5 group-hover:scale-110 transition-transform">
-                                    ⚡
-                                </div>
-                                <div>
-                                    <div class="flex items-center gap-2">
-                                        <h3 class="font-bold text-white text-base">Schnell-Check (Multiple Choice)</h3>
-                                    </div>
-                                    <p class="text-xs text-slate-400 mt-1">Ideal für unterwegs am Handy: Wähle aus 4 Optionen die richtige Übersetzung.</p>
-                                </div>
-                            </div>
-                            <span class="text-slate-500 group-hover:text-indigo-400 font-bold text-lg">➔</span>
-                        </button>
+        <!-- Direction & Queue Info (HIER IST DER WICHTIGE UMSCHALTER WIEDER DRIN!) -->
+        <div class="flex justify-between items-center mb-3 px-1">
+            <span id="queue-info" class="text-xs text-slate-400 font-medium">Verbleibend: 40</span>
+            <button onclick="toggleDirection()" class="text-xs text-indigo-400 hover:text-indigo-300 font-medium flex items-center gap-1.5 bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800 active:scale-95 transition shadow-sm">
+                <span id="dir-label">🔄 Fremdsprache ➔ Deutsch</span>
+            </button>
+        </div>
 
-                        <!-- Mode 2: Active Recall Typing -->
-                        <button onclick="startSession('type')" class="w-full text-left p-4 sm:p-5 rounded-2xl bg-slate-800/80 hover:bg-slate-800 active:scale-[0.99] border border-slate-700/80 hover:border-emerald-500/50 transition-all group flex items-center justify-between gap-4">
-                            <div class="flex items-start gap-3.5">
-                                <div class="w-11 h-11 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center text-xl shrink-0 mt-0.5 group-hover:scale-110 transition-transform">
-                                    ✍️
-                                </div>
-                                <div>
-                                    <div class="flex items-center gap-2">
-                                        <h3 class="font-bold text-white text-base">Profi-Modus (Aktives Tippen)</h3>
-                                        <span class="text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded">Effektivste</span>
-                                    </div>
-                                    <p class="text-xs text-slate-400 mt-1">Schreibe die Bedeutung selbst auf. Tolerante Prüfung + ehrliche Selbstbewertung.</p>
-                                </div>
-                            </div>
-                            <span class="text-slate-500 group-hover:text-emerald-400 font-bold text-lg">➔</span>
-                        </button>
+        <!-- Quiz Card -->
+        <div id="study-area" class="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-2xl">
+            
+            <div class="flex justify-between items-center mb-4">
+                <span id="category-badge" class="text-[11px] font-bold uppercase tracking-wider text-cyan-400 bg-cyan-950/80 border border-cyan-800/50 px-2.5 py-0.5 rounded-md">
+                    Emotionen
+                </span>
+                <span class="text-[11px] text-slate-500 font-mono">Active Recall</span>
+            </div>
 
-                        <!-- Mode 3: Flashcards -->
-                        <button onclick="startSession('cards')" class="w-full text-left p-4 sm:p-5 rounded-2xl bg-slate-800/80 hover:bg-slate-800 active:scale-[0.99] border border-slate-700/80 hover:border-cyan-500/50 transition-all group flex items-center justify-between gap-4">
-                            <div class="flex items-start gap-3.5">
-                                <div class="w-11 h-11 rounded-xl bg-cyan-500/15 text-cyan-400 flex items-center justify-center text-xl shrink-0 mt-0.5 group-hover:scale-110 transition-transform">
-                                    🗂️
-                                </div>
-                                <div>
-                                    <h3 class="font-bold text-white text-base">Karteikarten (Umdrehen)</h3>
-                                    <p class="text-xs text-slate-400 mt-1">Überlege dir die Lösung im Kopf, tippe zum Umdrehen und bewerte dich selbst.</p>
-                                </div>
-                            </div>
-                            <span class="text-slate-500 group-hover:text-cyan-400 font-bold text-lg">➔</span>
-                        </button>
-                    </div>
+            <!-- Question Prompt -->
+            <div id="prompt-box" class="mb-6">
+                <h2 id="question-word" class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight break-words">
+                    Lade...
+                </h2>
+                <p id="question-hint" class="text-xs text-slate-400 mt-1">
+                    Wähle die richtige Übersetzung:
+                </p>
+            </div>
 
-                    <!-- Direction Toggle -->
-                    <div class="mt-6 pt-5 border-t border-slate-800 flex items-center justify-between">
-                        <span class="text-xs font-medium text-slate-400">Abfragerichtung:</span>
-                        <div class="inline-flex bg-slate-950 p-1 rounded-xl border border-slate-800">
-                            <button id="dir-en-de" onclick="setDirection('en-de')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white transition">
-                                Englisch ➔ Deutsch
-                            </button>
-                            <button id="dir-de-en" onclick="setDirection('de-en')" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition">
-                                Deutsch ➔ Englisch
-                            </button>
+            <!-- MODE 1: Multiple Choice -->
+            <div id="mode-mc" class="space-y-2.5"></div>
+
+            <!-- MODE 2: Active Typing -->
+            <div id="mode-type" class="hidden space-y-3">
+                <input type="text" id="type-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                    placeholder="Übersetzung eintippen..."
+                    class="w-full bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded-xl px-4 py-3.5 text-base text-white placeholder-slate-500 outline-none transition">
+                <button id="check-type-btn" onclick="checkTypedAnswer()"
+                    class="w-full bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white font-semibold py-3.5 rounded-xl transition shadow-lg">
+                    Überprüfen ↵
+                </button>
+            </div>
+
+            <!-- MODE 3: Flashcards -->
+            <div id="mode-cards" class="hidden">
+                <div onclick="flipCard()" class="perspective cursor-pointer h-48 w-full">
+                    <div id="flashcard-inner" class="preserve-3d relative w-full h-full">
+                        <div class="backface-hidden absolute inset-0 bg-slate-950 border border-slate-700 rounded-xl flex flex-col items-center justify-center p-6 text-center">
+                            <span class="text-xs text-slate-500 mb-2">Tippen zum Umdrehen</span>
+                            <p id="card-front" class="text-xl sm:text-2xl font-bold text-white"></p>
+                        </div>
+                        <div class="backface-hidden rotate-y-180 absolute inset-0 bg-indigo-950/60 border border-indigo-500/50 rounded-xl flex flex-col items-center justify-center p-6 text-center">
+                            <span class="text-xs text-indigo-300 mb-2">Lösung</span>
+                            <p id="card-back" class="text-xl sm:text-2xl font-bold text-emerald-300"></p>
                         </div>
                     </div>
                 </div>
-            </section>
-
-            <!-- 2. ACTIVE TRAINING SCREEN -->
-            <section id="training-screen" class="hidden space-y-4">
-                
-                <!-- Card Container (Used for MC & Typing) -->
-                <div id="standard-card" class="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl">
-                    <!-- Category & Word Type Badge -->
-                    <div class="flex items-center justify-between gap-2 mb-4">
-                        <span id="word-category" class="text-[11px] font-semibold tracking-wider uppercase text-cyan-400 bg-cyan-950/80 border border-cyan-800/50 px-2.5 py-1 rounded-lg">
-                            Kategorie
-                        </span>
-                        <span id="queue-remaining" class="text-xs text-slate-500 font-medium">
-                            Noch 40 offen
-                        </span>
-                    </div>
-
-                    <!-- Prompt Word -->
-                    <div class="mb-6">
-                        <p id="prompt-instruction" class="text-xs text-slate-400 mb-1">Übersetze ins Deutsche:</p>
-                        <h2 id="prompt-word" class="text-2xl sm:text-3xl font-extrabold text-white leading-snug break-words">
-                            Vokabel
-                        </h2>
-                    </div>
-
-                    <!-- MODE A: MULTIPLE CHOICE OPTIONS -->
-                    <div id="mc-area" class="hidden space-y-3">
-                        <!-- Buttons injected via JS -->
-                    </div>
-
-                    <!-- MODE B: TYPING INPUT AREA -->
-                    <div id="type-area" class="hidden space-y-4">
-                        <form id="type-form" onsubmit="handleTypeSubmit(event)" class="space-y-3">
-                            <input 
-                                type="text" 
-                                id="type-input" 
-                                autocomplete="off" 
-                                autocorrect="off" 
-                                spellcheck="false"
-                                placeholder="Deine Übersetzung eingeben..." 
-                                class="w-full p-4 rounded-2xl bg-slate-950 border-2 border-slate-700 focus:border-indigo-500 focus:outline-none text-white text-base placeholder-slate-500 transition"
-                            >
-                            <button type="submit" id="check-type-btn" class="w-full py-3.5 px-6 rounded-2xl bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white font-bold text-base shadow-lg shadow-indigo-950/50 transition">
-                                Antwort prüfen ✓
-                            </button>
-                        </form>
-
-                        <!-- Typing Evaluation Box -->
-                        <div id="type-eval-box" class="hidden space-y-4 pt-2">
-                            <div id="type-result-banner" class="p-4 rounded-2xl border text-sm">
-                                <!-- Filled via JS -->
-                            </div>
-                            
-                            <!-- Self-Override Buttons (in case of minor typo or synonym) -->
-                            <div id="type-override-buttons" class="grid grid-cols-2 gap-3">
-                                <button onclick="resolveTyping(false)" class="py-3.5 px-4 rounded-2xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/40 text-rose-300 font-bold text-sm transition">
-                                    ❌ Nochmal üben
-                                </button>
-                                <button onclick="resolveTyping(true)" class="py-3.5 px-4 rounded-2xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 font-bold text-sm transition">
-                                    ✅ Als richtig werten
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Feedback Banner for MC -->
-                    <div id="mc-feedback" class="hidden mt-5 p-4 rounded-2xl text-sm font-medium border"></div>
-
-                    <!-- Next Button for MC -->
-                    <button id="mc-next-btn" onclick="advanceQueue()" class="hidden mt-5 w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white font-bold text-base shadow-lg transition">
-                        Weiter ➔
+                <div class="grid grid-cols-2 gap-3 mt-4">
+                    <button onclick="rateCard(false)" class="bg-rose-950/80 hover:bg-rose-900 border border-rose-700/60 text-rose-200 font-semibold py-3 rounded-xl text-sm active:scale-95 transition">
+                        ❌ Noch unsicher
+                    </button>
+                    <button onclick="rateCard(true)" class="bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-700/60 text-emerald-200 font-semibold py-3 rounded-xl text-sm active:scale-95 transition">
+                        ✅ Gewusst
                     </button>
                 </div>
+            </div>
 
-                <!-- MODE C: FLASHCARD CONTAINER -->
-                <div id="flashcard-area" class="hidden space-y-5">
-                    <div class="perspective-1000 w-full h-72 sm:h-80 cursor-pointer" onclick="flipCard()">
-                        <div id="flashcard-inner" class="relative w-full h-full transform-style-3d">
-                            
-                            <!-- Front of Card -->
-                            <div class="absolute inset-0 backface-hidden bg-slate-900 border-2 border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl flex flex-col justify-between">
-                                <div class="flex justify-between items-center">
-                                    <span id="fc-category" class="text-[11px] font-semibold uppercase tracking-wider text-cyan-400 bg-cyan-950/80 px-2.5 py-1 rounded-lg">
-                                        Kategorie
-                                    </span>
-                                    <span class="text-xs text-slate-500">Antippen zum Umdrehen ↻</span>
-                                </div>
-                                <div class="text-center my-auto px-2">
-                                    <h2 id="fc-front-text" class="text-2xl sm:text-3xl font-extrabold text-white leading-snug">
-                                        Vokabel
-                                    </h2>
-                                </div>
-                                <div class="text-center">
-                                    <span class="inline-block text-xs font-medium text-slate-400 bg-slate-800/80 px-4 py-1.5 rounded-full">
-                                        Lösung anzeigen
-                                    </span>
-                                </div>
-                            </div>
+            <!-- Feedback & Duolingo Motivation -->
+            <div id="feedback-area" class="hidden mt-5 p-4 rounded-xl text-sm font-medium border shadow-lg transition-all"></div>
 
-                            <!-- Back of Card -->
-                            <div class="absolute inset-0 backface-hidden rotate-y-180 bg-slate-900 border-2 border-indigo-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl flex flex-col justify-between">
-                                <div class="flex justify-between items-center">
-                                    <span class="text-[11px] font-semibold uppercase tracking-wider text-indigo-400 bg-indigo-950/80 px-2.5 py-1 rounded-lg">
-                                        Übersetzung
-                                    </span>
-                                    <span class="text-xs text-slate-500">↻ Zurück</span>
-                                </div>
-                                <div class="text-center my-auto px-2 space-y-2">
-                                    <p id="fc-back-sub" class="text-xs text-slate-400"></p>
-                                    <h2 id="fc-back-text" class="text-2xl sm:text-3xl font-extrabold text-emerald-300 leading-snug">
-                                        Lösung
-                                    </h2>
-                                </div>
-                                <div class="text-center text-xs text-slate-400">
-                                    Wie gut wusstest du es?
-                                </div>
-                            </div>
-
-                        </div>
-                    </div>
-
-                    <!-- Flashcard Rating Buttons -->
-                    <div id="fc-controls" class="grid grid-cols-2 gap-3 opacity-40 pointer-events-none transition-opacity duration-300">
-                        <button onclick="rateFlashcard(false)" class="py-4 px-4 rounded-2xl bg-rose-500/15 hover:bg-rose-500/25 active:scale-[0.98] border border-rose-500/40 text-rose-300 font-bold text-sm sm:text-base flex flex-col items-center gap-1 transition">
-                            <span>❌ Nochmal üben</span>
-                            <span class="text-[11px] font-normal text-rose-400/80">Kommt gleich wieder</span>
-                        </button>
-                        <button onclick="rateFlashcard(true)" class="py-4 px-4 rounded-2xl bg-emerald-500/15 hover:bg-emerald-500/25 active:scale-[0.98] border border-emerald-500/40 text-emerald-300 font-bold text-sm sm:text-base flex flex-col items-center gap-1 transition">
-                            <span>✅ Sicher gewusst</span>
-                            <span class="text-[11px] font-normal text-emerald-400/80">Abgehakt!</span>
-                        </button>
-                    </div>
-                </div>
-
-            </section>
-
-            <!-- 3. RESULT & SUMMARY SCREEN -->
-            <section id="result-screen" class="hidden">
-                <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl text-center">
-                    <div class="w-16 h-16 rounded-2xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center text-4xl mx-auto mb-4">
-                        🏆
-                    </div>
-                    <h2 class="text-2xl sm:text-3xl font-extrabold text-white mb-2">
-                        Runde gemeistert!
-                    </h2>
-                    <p id="result-summary-text" class="text-sm text-slate-300 mb-6">
-                        Du hast alle 40 Vokabeln erfolgreich durchgearbeitet.
-                    </p>
-
-                    <!-- Stats Grid -->
-                    <div class="grid grid-cols-2 gap-3 mb-6">
-                        <div class="bg-slate-950 border border-slate-800 p-4 rounded-2xl">
-                            <div id="stat-first-try" class="text-2xl font-extrabold text-emerald-400">0</div>
-                            <div class="text-xs text-slate-400 mt-1">Direkt gewusst</div>
-                        </div>
-                        <div class="bg-slate-950 border border-slate-800 p-4 rounded-2xl">
-                            <div id="stat-repeated" class="text-2xl font-extrabold text-amber-400">0</div>
-                            <div class="text-xs text-slate-400 mt-1">Wiederholt & gelernt</div>
-                        </div>
-                    </div>
-
-                    <!-- Difficult Words Review List -->
-                    <div id="difficult-words-box" class="hidden text-left bg-slate-950 border border-slate-800 rounded-2xl p-4 mb-6">
-                        <h3 class="text-xs font-bold uppercase tracking-wider text-amber-400 mb-3 flex items-center gap-1.5">
-                            <span>📌</span> Deine Stolpersteine in dieser Runde:
-                        </h3>
-                        <ul id="difficult-words-list" class="space-y-2.5 max-h-56 overflow-y-auto pr-1 text-sm">
-                            <!-- Injected via JS -->
-                        </ul>
-                    </div>
-
-                    <!-- Action Buttons -->
-                    <div class="space-y-3">
-                        <button id="retry-mistakes-btn" onclick="startMistakesOnly()" class="hidden w-full py-4 px-6 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-base shadow-lg transition">
-                            🎯 Nur diese Stolpersteine üben
-                        </button>
-                        <button onclick="restartCurrentMode()" class="w-full py-4 px-6 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-base shadow-lg transition">
-                            🔄 Alle 40 Vokabeln nochmal
-                        </button>
-                        <button onclick="goHome()" class="w-full py-3.5 px-6 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-sm transition">
-                            Lernmodus wechseln
-                        </button>
-                    </div>
-                </div>
-            </section>
-
+            <!-- Next Button -->
+            <button id="next-btn" onclick="nextItem()" class="hidden mt-4 w-full bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white font-bold py-3.5 rounded-xl transition shadow-lg">
+                Weiter ➔
+            </button>
         </div>
+
+        <!-- Victory Screen -->
+        <div id="victory-area" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center shadow-2xl">
+            <div class="text-5xl mb-3">🎉</div>
+            <h2 class="text-2xl font-extrabold text-white mb-2">Super durchgezogen!</h2>
+            <p id="victory-stats" class="text-sm text-slate-400 mb-6">Du hast alle Vokabeln in diesem Set gemeistert.</p>
+            <button onclick="resetProgress()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 rounded-xl transition shadow-lg">
+                Noch einmal trainieren 🔄
+            </button>
+        </div>
+
     </main>
 
-    <!-- Footer -->
-    <footer class="py-4 text-center text-[11px] text-slate-500 px-4">
-        Optimiert für Smartphone & Desktop • 40 Vokabeln komplett
+    <!-- HOMESCREEN GUIDE MODAL -->
+    <div id="home-modal" class="hidden fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex flex-col overflow-y-auto p-4">
+        <div class="max-w-lg w-full mx-auto bg-slate-900 border border-slate-800 rounded-2xl p-5 my-auto shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-4">
+                <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                    <span>📱</span> Als App auf den Homescreen
+                </h2>
+                <button onclick="closeHomeGuide()" class="text-slate-400 hover:text-white text-xl px-2">✕</button>
+            </div>
+            <p class="text-xs text-slate-400 mb-4 leading-relaxed">
+                Damit sich die Seite auf deinem Handy wie eine echte App (ohne Browser-Leiste) bedienen lässt:
+            </p>
+            <div class="space-y-3 text-xs text-slate-300 mb-5">
+                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                    <strong class="text-indigo-400 block mb-1">🍏 iPhone / Safari:</strong>
+                    Tippe unten in Safari auf das <strong>Teilen-Symbol</strong> (Viereck mit Pfeil nach oben) und wähle <strong>„Zum Home-Bildschirm“</strong>.
+                </div>
+                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                    <strong class="text-cyan-400 block mb-1">🤖 Android / Chrome:</strong>
+                    Tippe oben rechts auf die <strong>drei Punkte</strong> und wähle <strong>„Zum Startbildschirm hinzufügen“</strong> oder „App installieren“.
+                </div>
+            </div>
+            <button onclick="closeHomeGuide()" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl text-xs transition">Verstanden</button>
+        </div>
+    </div>
+
+    <!-- CUSTOM WORDS EDITOR MODAL -->
+    <div id="custom-modal" class="hidden fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex flex-col overflow-y-auto p-4">
+        <div class="max-w-lg w-full mx-auto bg-slate-900 border border-slate-800 rounded-2xl p-5 my-auto shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-4">
+                <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                    <span>✏️</span> Eigene Vokabeln & Codenames-Editor
+                </h2>
+                <button onclick="closeCustomModal()" class="text-slate-400 hover:text-white text-xl px-2">✕</button>
+            </div>
+            <p class="text-xs text-slate-400 mb-3 leading-relaxed">
+                Füge hier eigene Wörter ein (<code class="text-indigo-400 bg-slate-950 px-1 py-0.5 rounded">Fremdsprache = Deutsch</code> pro Zeile).
+            </p>
+            <textarea id="custom-textarea" rows="6" placeholder="feel = fühlen&#10;mood = Stimmung"
+                class="w-full bg-slate-950 border border-slate-700 focus:border-purple-500 rounded-xl p-3 text-xs font-mono text-white placeholder-slate-600 outline-none transition mb-3"></textarea>
+            <div class="grid grid-cols-2 gap-2 mb-4">
+                <button onclick="copyCustomShareLink()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-purple-300 text-xs font-semibold py-3 rounded-xl transition">📋 Liste kopieren</button>
+                <button onclick="saveCustomWords()" class="bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold py-3 rounded-xl transition shadow-lg">💾 Speichern</button>
+            </div>
+            <div class="pt-3 border-t border-slate-800 flex justify-between items-center">
+                <span class="text-xs text-slate-500">Standard-Set:</span>
+                <button onclick="loadDefaultSet()" class="text-xs text-indigo-400 underline">Wiederherstellen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCANNER MODAL -->
+    <div id="scanner-modal" class="hidden fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex flex-col overflow-y-auto p-4">
+        <div class="max-w-lg w-full mx-auto bg-slate-900 border border-slate-800 rounded-2xl p-5 my-auto shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-4">
+                <h2 class="text-lg font-bold text-white flex items-center gap-2"><span>📷</span> Foto-Scanner (OCR)</h2>
+                <button onclick="closeScannerModal()" class="text-slate-400 hover:text-white text-xl px-2">✕</button>
+            </div>
+            <div id="scan-step-upload">
+                <p class="text-xs text-slate-400 mb-4">Fotografiere deine Vokabelseite ab, um die Wörter automatisch zu erkennen.</p>
+                <label class="block w-full border-2 border-dashed border-slate-700 hover:border-cyan-500 rounded-2xl p-6 text-center cursor-pointer transition bg-slate-950/50">
+                    <span class="text-3xl block mb-2">🖼️</span>
+                    <span class="text-sm font-semibold text-cyan-400 block">Foto auswählen</span>
+                    <input type="file" id="image-input" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+                </label>
+            </div>
+            <div id="scan-step-loading" class="hidden py-8 text-center">
+                <div class="inline-block w-10 h-10 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                <p id="scan-status-text" class="text-sm font-semibold text-white">Analysiere Bild...</p>
+            </div>
+            <div id="scan-step-review" class="hidden">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-xs font-semibold text-emerald-400" id="detected-count-label">0 Paare erkannt</span>
+                    <button onclick="addExtractedRow('','')" class="text-xs bg-slate-800 text-cyan-300 px-2.5 py-1 rounded-lg">+ Zeile</button>
+                </div>
+                <div id="extracted-list" class="space-y-2 max-h-60 overflow-y-auto pr-1 mb-4"></div>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <button onclick="applyScannedVocab(true)" class="bg-slate-800 border border-slate-600 text-white text-xs font-semibold py-3 rounded-xl">Hinzufügen</button>
+                    <button onclick="applyScannedVocab(false)" class="bg-cyan-600 text-white text-xs font-bold py-3 rounded-xl">Nur diese lernen</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="py-3 text-center text-[11px] text-slate-600">
+        Active Recall • Richtungs-Umschalter • 100% Werbefrei
     </footer>
 
     <script>
-        // Vollständige Vokabelliste (exakt alle 40 Einträge aus den Bildern)
-        const ALL_VOCABULARY = [
-            { id: 1, en: "feel, felt, felt (v)", de: "(sich) fühlen", cat: "Gefühle & Emotionen" },
-            { id: 2, en: "feeling (n)", de: "Gefühl", cat: "Gefühle & Emotionen" },
-            { id: 3, en: "to show your feelings", de: "seine Gefühle zeigen", cat: "Gefühle & Emotionen" },
-            { id: 4, en: "to hide your feelings", de: "seine Gefühle verbergen", cat: "Gefühle & Emotionen" },
-            { id: 5, en: "to share your feelings", de: "seine Gefühle teilen", cat: "Gefühle & Emotionen" },
-            { id: 6, en: "emotion (n)", de: "Gefühl, Emotion", cat: "Gefühle & Emotionen" },
-            { id: 7, en: "emotional (adj)", de: "Gefühls-, emotional", cat: "Gefühle & Emotionen" },
-            { id: 8, en: "mood (n)", de: "Stimmung, Laune", cat: "Gefühle & Emotionen" },
-            { id: 9, en: "spirit (n)", de: "Geist, Stimmung", cat: "Gefühle & Emotionen" },
-            { id: 10, en: "spirits (n pl)", de: "Stimmung, Gemütsverfassung", cat: "Gefühle & Emotionen" },
-            { id: 11, en: "impression (n)", de: "Eindruck", cat: "Gefühle & Emotionen" },
-            { id: 12, en: "suppress (v)", de: "unterdrücken", cat: "Gefühle & Emotionen" },
-            { id: 13, en: "positive (adj)", de: "positiv", cat: "Gefühle & Emotionen" },
-            { id: 14, en: "negative (adj)", de: "negativ", cat: "Gefühle & Emotionen" },
-            { id: 15, en: "show, showed, shown (v)", de: "zeigen", cat: "Gefühle & Emotionen" },
-            { id: 16, en: "hide, hid, hidden (v)", de: "verstecken, verbergen", cat: "Gefühle & Emotionen" },
-            { id: 17, en: "alone (adj)", de: "allein", cat: "Einsamkeit & Sehnsucht" },
-            { id: 18, en: "lonely (adj)", de: "einsam", cat: "Einsamkeit & Sehnsucht" },
-            { id: 19, en: "long for (phrasal v)", de: "sich sehnen nach", cat: "Einsamkeit & Sehnsucht" },
-            { id: 20, en: "miss (v)", de: "vermissen", cat: "Einsamkeit & Sehnsucht" },
-            { id: 21, en: "pity (n uncount)", de: "Bedauern, Mitleid", cat: "Mitleid & Bedauern" },
-            { id: 22, en: "sympathy (n)", de: "Mitleid, Mitgefühl", cat: "Mitleid & Bedauern" },
-            { id: 23, en: "sorry (adj)", de: "traurig, voll Bedauern / es tut mir leid", cat: "Mitleid & Bedauern" },
-            { id: 24, en: "disappointed (adj)", de: "enttäuscht", cat: "Mitleid & Bedauern" },
-            { id: 25, en: "disappointment (n)", de: "Enttäuschung", cat: "Mitleid & Bedauern" },
-            { id: 26, en: "sympathetic (adj)", de: "mitfühlend, verständnisvoll", cat: "Mitleid & Bedauern" },
-            { id: 27, en: "regret (v)", de: "bedauern", cat: "Mitleid & Bedauern" },
-            { id: 28, en: "bother (v)", de: "beunruhigen, stören, belästigen", cat: "Wut & Verärgerung" },
-            { id: 29, en: "disturb (v)", de: "stören", cat: "Wut & Verärgerung" },
-            { id: 30, en: "annoying (adj)", de: "ärgerlich, lästig", cat: "Wut & Verärgerung" },
-            { id: 31, en: "annoyed (adj)", de: "verärgert, ärgerlich", cat: "Wut & Verärgerung" },
-            { id: 32, en: "mad (adj)", de: "böse, wütend, sauer", cat: "Wut & Verärgerung" },
-            { id: 33, en: "anger (n uncount)", de: "Zorn, Wut", cat: "Wut & Verärgerung" },
-            { id: 34, en: "angry (adj)", de: "ärgerlich, verärgert, wütend", cat: "Wut & Verärgerung" },
-            { id: 35, en: "angrily (adv)", de: "ärgerlich, verärgert, wütend", cat: "Wut & Verärgerung" },
-            { id: 36, en: "hostile (adj)", de: "feindlich, feindselig", cat: "Wut & Verärgerung" },
-            { id: 37, en: "rage (n uncount)", de: "Wut, Rasen, Toben", cat: "Wut & Verärgerung" },
-            { id: 38, en: "furious (adj)", de: "sehr wütend, rasend vor Wut", cat: "Wut & Verärgerung" },
-            { id: 39, en: "fit (n)", de: "Anfall (z. B. Wutanfall)", cat: "Wut & Verärgerung" },
-            { id: 40, en: "temper (n)", de: "Laune, Jähzorn", cat: "Wut & Verärgerung" }
+        const vocabData = {
+            en: [
+                { foreign: "feel, felt, felt", de: "(sich) fühlen", cat: "Emotionen" },
+                { foreign: "feeling", de: "Gefühl", cat: "Emotionen" },
+                { foreign: "to show your feelings", de: "seine Gefühle zeigen", cat: "Emotionen" },
+                { foreign: "to hide your feelings", de: "seine Gefühle verbergen", cat: "Emotionen" },
+                { foreign: "to share your feelings", de: "seine Gefühle teilen", cat: "Emotionen" },
+                { foreign: "emotion", de: "Gefühl, Emotion", cat: "Emotionen" },
+                { foreign: "emotional", de: "Gefühls-, emotional", cat: "Emotionen" },
+                { foreign: "mood", de: "Stimmung, Laune", cat: "Emotionen" },
+                { foreign: "spirit", de: "Geist, Stimmung", cat: "Emotionen" },
+                { foreign: "spirits", de: "Stimmung, Gemütsverfassung", cat: "Emotionen" },
+                { foreign: "impression", de: "Eindruck", cat: "Emotionen" },
+                { foreign: "suppress", de: "unterdrücken", cat: "Emotionen" },
+                { foreign: "positive", de: "positiv", cat: "Emotionen" },
+                { foreign: "negative", de: "negativ", cat: "Emotionen" },
+                { foreign: "alone", de: "allein", cat: "Einsamkeit" },
+                { foreign: "lonely", de: "einsam", cat: "Einsamkeit" },
+                { foreign: "long for", de: "sich sehnen nach", cat: "Einsamkeit" },
+                { foreign: "miss", de: "vermissen", cat: "Einsamkeit" },
+                { foreign: "pity", de: "Bedauern, Mitleid", cat: "Mitleid" },
+                { foreign: "sympathy", de: "Mitleid, Mitgefühl", cat: "Mitleid" },
+                { foreign: "sorry", de: "traurig, voll Bedauern", cat: "Mitleid" },
+                { foreign: "disappointed", de: "enttäuscht", cat: "Mitleid" },
+                { foreign: "disappointment", de: "Enttäuschung", cat: "Mitleid" },
+                { foreign: "sympathetic", de: "mitfühlend, verständnisvoll", cat: "Mitleid" },
+                { foreign: "regret", de: "bedauern", cat: "Mitleid" },
+                { foreign: "bother", de: "beunruhigen, stören", cat: "Wut" },
+                { foreign: "disturb", de: "stören", cat: "Wut" },
+                { foreign: "annoying", de: "ärgerlich, lästig", cat: "Wut" },
+                { foreign: "annoyed", de: "verärgert", cat: "Wut" },
+                { foreign: "mad", de: "böse, wütend, sauer", cat: "Wut" },
+                { foreign: "anger", de: "Zorn, Wut", cat: "Wut" },
+                { foreign: "angry", de: "wütend", cat: "Wut" },
+                { foreign: "hostile", de: "feindlich", cat: "Wut" },
+                { foreign: "rage", de: "Wut, Rasen", cat: "Wut" },
+                { foreign: "furious", de: "sehr wütend", cat: "Wut" },
+                { foreign: "temper", de: "Laune, Jähzorn", cat: "Wut" }
+            ],
+            es: [
+                { foreign: "sentir, sentirse", de: "sich fühlen", cat: "Emociones" },
+                { foreign: "el sentimiento", de: "das Gefühl", cat: "Emociones" },
+                { foreign: "la emoción", de: "die Emotion", cat: "Emociones" },
+                { foreign: "el estado de ánimo", de: "die Stimmung, Laune", cat: "Emociones" },
+                { foreign: "solo / sola", de: "allein", cat: "Soledad" },
+                { foreign: "solitario", de: "einsam", cat: "Soledad" },
+                { foreign: "extrañar / echar de menos", de: "vermissen", cat: "Soledad" },
+                { foreign: "la lástima", de: "das Mitleid, Bedauern", cat: "Compasión" },
+                { foreign: "la compasión", de: "das Mitgefühl", cat: "Compasión" },
+                { foreign: "decepcionado", de: "enttäuscht", cat: "Compasión" },
+                { foreign: "la ira / el enojo", de: "die Wut, der Zorn", cat: "Enojo" },
+                { foreign: "enojado / enfadado", de: "wütend, verärgert", cat: "Enojo" },
+                { foreign: "molestar", de: "stören, ärgern", cat: "Enojo" }
+            ]
+        };
+
+        const duolingoCheers = [
+            "Starke Leistung! Bleib dran! 🔥",
+            "Genial! Das sitzt beim nächsten Mal perfekt! 🚀",
+            "Keine Sorge, aus Fehlern lernt man am schnellsten! 💪",
+            "Weiter geht's, du rockst das! 🌟",
+            "Schritt für Schritt zum Vokabel-Profi! 🎯"
         ];
 
-        // App State
-        let currentMode = 'mc'; // 'mc', 'type', 'cards'
-        let direction = 'en-de'; // 'en-de' or 'de-en'
-        let activeDeck = [];
+        let currentLang = 'en';
+        let activeVocabulary = [...vocabData.en];
+        let setTitle = "Psyche & Geist";
+        let mode = 'mc';
+        let foreignToDe = true;
         let queue = [];
-        let masteredIds = new Set();
-        let mistakeIds = new Set();
-        let currentCard = null;
-        let isCardFlipped = false;
-        let mcLocked = false;
+        let mastered = new Set();
+        let currentItem = null;
+        let answered = false;
 
-        // Set Direction on Start Screen
-        function setDirection(dir) {
-            direction = dir;
-            const btnEnDe = document.getElementById('dir-en-de');
-            const btnDeEn = document.getElementById('dir-de-en');
-            if (dir === 'en-de') {
-                btnEnDe.className = "px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white transition";
-                btnDeEn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition";
-            } else {
-                btnDeEn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white transition";
-                btnEnDe.className = "px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition";
+        function init() {
+            const saved = localStorage.getItem('custom_vocab_master_v3');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    if (parsed.items && parsed.items.length > 0) {
+                        activeVocabulary = parsed.items;
+                        setTitle = parsed.title || "Eignes Set";
+                    }
+                } catch(e) {}
             }
+            resetProgress();
         }
 
-        function goHome() {
-            document.getElementById('start-screen').classList.remove('hidden');
-            document.getElementById('training-screen').classList.add('hidden');
-            document.getElementById('result-screen').classList.add('hidden');
-            document.getElementById('header-stats').classList.add('hidden');
-            document.getElementById('progress-bar-wrapper').classList.add('hidden');
-        }
-
-        function startSession(mode, customList = null) {
-            currentMode = mode;
-            activeDeck = customList ? [...customList] : [...ALL_VOCABULARY];
-            queue = shuffleArray([...activeDeck]);
-            masteredIds.clear();
-            mistakeIds.clear();
-
-            document.getElementById('start-screen').classList.add('hidden');
-            document.getElementById('result-screen').classList.add('hidden');
-            document.getElementById('training-screen').classList.remove('hidden');
-            document.getElementById('header-stats').classList.remove('hidden');
-            document.getElementById('progress-bar-wrapper').classList.remove('hidden');
-
-            updateProgressUI();
-            loadNextItem();
-        }
-
-        function restartCurrentMode() {
-            startSession(currentMode, null);
-        }
-
-        function startMistakesOnly() {
-            const mistakesList = ALL_VOCABULARY.filter(item => mistakeIds.has(item.id));
-            if (mistakesList.length > 0) {
-                startSession(currentMode, mistakesList);
+        function setLang(lang) {
+            currentLang = lang;
+            ['en', 'es'].forEach(l => {
+                document.getElementById(`lang-${l}`).className = l === lang ? "px-2.5 py-1 rounded font-semibold transition bg-indigo-600 text-white" : "px-2.5 py-1 rounded font-semibold transition text-slate-400 hover:text-white";
+            });
+            if (!localStorage.getItem('custom_vocab_master_v3')) {
+                activeVocabulary = [...vocabData[lang]];
+                setTitle = lang === 'en' ? "Psyche & Geist" : "Emociones (Spanisch)";
             }
+            resetProgress();
         }
 
-        function shuffleArray(arr) {
-            for (let i = arr.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [arr[i], arr[j]] = [arr[j], arr[i]];
-            }
-            return arr;
+        function resetProgress() {
+            mastered.clear();
+            queue = activeVocabulary.map((_, i) => i).sort(() => Math.random() - 0.5);
+            document.getElementById('victory-area').classList.add('hidden');
+            document.getElementById('study-area').classList.remove('hidden');
+            document.getElementById('set-title-badge').innerText = `Set: ${setTitle}`;
+            updateStats();
+            loadNext();
         }
 
-        function updateProgressUI() {
-            const total = activeDeck.length;
-            const done = masteredIds.size;
-            const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-
-            document.getElementById('progress-text').innerText = `${done} / ${total}`;
-            document.getElementById('progress-bar').style.width = `${pct}%`;
-            document.getElementById('queue-remaining').innerText = `Noch ${queue.length} offen`;
+        function updateStats() {
+            document.getElementById('mastered-counter').innerText = `${mastered.size}/${activeVocabulary.length}`;
+            document.getElementById('queue-info').innerText = `Verbleibend: ${queue.length}`;
         }
 
-        function getPromptText(item) {
-            return direction === 'en-de' ? item.en : item.de;
+        function setMode(newMode) {
+            mode = newMode;
+            ['mc', 'type', 'cards'].forEach(m => {
+                document.getElementById(`tab-${m}`).className = m === mode ? "py-2 text-xs font-semibold rounded-lg transition bg-indigo-600 text-white shadow" : "py-2 text-xs font-semibold rounded-lg transition text-slate-400 hover:text-white";
+                document.getElementById(`mode-${m}`).classList.toggle('hidden', m !== mode);
+            });
+            document.getElementById('prompt-box').style.display = (mode === 'cards') ? 'none' : 'block';
+            loadNext();
         }
 
-        function getAnswerText(item) {
-            return direction === 'en-de' ? item.de : item.en;
+        function toggleDirection() {
+            foreignToDe = !foreignToDe;
+            document.getElementById('dir-label').innerText = foreignToDe ? "🔄 Fremdsprache ➔ Deutsch" : "🔄 Deutsch ➔ Fremdsprache";
+            loadNext();
         }
 
-        function loadNextItem() {
+        function loadNext() {
             if (queue.length === 0) {
-                showResults();
+                document.getElementById('study-area').classList.add('hidden');
+                document.getElementById('victory-area').classList.remove('hidden');
+                document.getElementById('victory-stats').innerText = `Du hast alle ${activeVocabulary.length} Vokabeln fehlerfrei gemeistert!`;
                 return;
             }
 
-            currentCard = queue[0];
-            updateProgressUI();
+            answered = false;
+            const idx = queue[0];
+            currentItem = { idx, ...activeVocabulary[idx] };
 
-            // Show repetition badge if this card was previously missed
-            const roundBadge = document.getElementById('round-indicator');
-            if (mistakeIds.has(currentCard.id)) {
-                roundBadge.classList.remove('hidden');
-            } else {
-                roundBadge.classList.add('hidden');
-            }
+            const qText = foreignToDe ? currentItem.foreign : currentItem.de;
+            const aText = foreignToDe ? currentItem.de : currentItem.foreign;
 
-            if (currentMode === 'cards') {
-                document.getElementById('standard-card').classList.add('hidden');
-                document.getElementById('flashcard-area').classList.remove('hidden');
-                setupFlashcard(currentCard);
-            } else {
-                document.getElementById('flashcard-area').classList.add('hidden');
-                document.getElementById('standard-card').classList.remove('hidden');
-                
-                document.getElementById('word-category').innerText = currentCard.cat;
-                document.getElementById('prompt-instruction').innerText = direction === 'en-de' 
-                    ? "Übersetze ins Deutsche:" 
-                    : "Übersetze ins Englische:";
-                document.getElementById('prompt-word').innerText = getPromptText(currentCard);
+            document.getElementById('category-badge').innerText = currentItem.cat || "Vokabeln";
+            document.getElementById('question-word').innerText = qText;
+            document.getElementById('feedback-area').classList.add('hidden');
+            document.getElementById('next-btn').classList.add('hidden');
 
-                if (currentMode === 'mc') {
-                    document.getElementById('mc-area').classList.remove('hidden');
-                    document.getElementById('type-area').classList.add('hidden');
-                    setupMultipleChoice(currentCard);
-                } else if (currentMode === 'type') {
-                    document.getElementById('mc-area').classList.add('hidden');
-                    document.getElementById('type-area').classList.remove('hidden');
-                    setupTypingMode();
-                }
+            if (mode === 'mc') {
+                document.getElementById('question-hint').innerText = "Wähle die richtige Übersetzung:";
+                renderMC(aText);
+            } else if (mode === 'type') {
+                document.getElementById('question-hint').innerText = "Tippe die Übersetzung ein:";
+                const input = document.getElementById('type-input');
+                input.value = '';
+                input.disabled = false;
+                document.getElementById('check-type-btn').classList.remove('hidden');
+                setTimeout(() => input.focus(), 100);
+            } else if (mode === 'cards') {
+                document.getElementById('flashcard-inner').classList.remove('rotate-y-180');
+                document.getElementById('card-front').innerText = qText;
+                document.getElementById('card-back').innerText = aText;
             }
         }
 
-        // --- MODE A: MULTIPLE CHOICE ---
-        function setupMultipleChoice(item) {
-            mcLocked = false;
-            const container = document.getElementById('mc-area');
+        function renderMC(correct) {
+            const container = document.getElementById('mode-mc');
             container.innerHTML = '';
-            document.getElementById('mc-feedback').classList.add('hidden');
-            document.getElementById('mc-next-btn').classList.add('hidden');
 
-            const correctAnswer = getAnswerText(item);
-            
-            // Pick 3 distinct distractors
-            const otherAnswers = ALL_VOCABULARY
-                .filter(v => v.id !== item.id && getAnswerText(v) !== correctAnswer)
-                .map(v => getAnswerText(v));
-            
-            const uniqueDistractors = [...new Set(otherAnswers)];
-            const selectedDistractors = shuffleArray(uniqueDistractors).slice(0, 3);
-            const options = shuffleArray([correctAnswer, ...selectedDistractors]);
+            const distractors = activeVocabulary
+                .map(v => foreignToDe ? v.de : v.foreign)
+                .filter(t => t !== correct)
+                .sort(() => Math.random() - 0.5)
+                .slice(0, 3);
+
+            const options = [...new Set([...distractors, correct])].sort(() => Math.random() - 0.5);
 
             options.forEach(opt => {
                 const btn = document.createElement('button');
-                btn.className = "w-full text-left p-4 rounded-2xl bg-slate-800/90 hover:bg-slate-800 active:scale-[0.99] border-2 border-slate-700/80 text-slate-100 font-medium text-sm sm:text-base transition-all";
+                btn.className = "w-full text-left p-3.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-sm font-medium text-slate-200 transition active:scale-[0.99]";
                 btn.innerText = opt;
-                btn.onclick = () => handleMcChoice(btn, opt, correctAnswer);
+                btn.onclick = () => handleMCSelection(btn, opt, correct);
                 container.appendChild(btn);
             });
         }
 
-        function handleMcChoice(clickedBtn, chosen, correct) {
-            if (mcLocked) return;
-            mcLocked = true;
+        function handleMCSelection(btn, selected, correct) {
+            if (answered) return;
+            answered = true;
 
-            const buttons = document.getElementById('mc-area').children;
-            const feedback = document.getElementById('mc-feedback');
-
-            if (chosen === correct) {
-                clickedBtn.className = "w-full text-left p-4 rounded-2xl bg-emerald-500/20 border-2 border-emerald-500 text-emerald-200 font-bold text-sm sm:text-base transition-all";
-                feedback.className = "mt-5 p-4 rounded-2xl text-sm font-semibold bg-emerald-950/90 border border-emerald-500/40 text-emerald-300";
-                feedback.innerText = "🎯 Volltreffer! Sitzt perfekt.";
-                
-                masteredIds.add(currentCard.id);
-                queue.shift(); // Remove from queue
+            const buttons = document.getElementById('mode-mc').children;
+            if (selected === correct) {
+                btn.className = "w-full text-left p-3.5 rounded-xl bg-emerald-950/90 border border-emerald-500 text-sm font-bold text-emerald-200";
+                markResult(true, correct);
             } else {
-                clickedBtn.className = "w-full text-left p-4 rounded-2xl bg-rose-500/20 border-2 border-rose-500 text-rose-200 font-semibold text-sm sm:text-base transition-all";
-                
+                btn.className = "w-full text-left p-3.5 rounded-xl bg-rose-950/90 border border-rose-500 text-sm font-bold text-rose-200";
                 for (let b of buttons) {
-                    if (b.innerText === correct) {
-                        b.className = "w-full text-left p-4 rounded-2xl bg-emerald-500/20 border-2 border-emerald-500 text-emerald-200 font-bold text-sm sm:text-base transition-all";
-                    }
+                    if (b.innerText === correct) b.className = "w-full text-left p-3.5 rounded-xl bg-emerald-950/90 border border-emerald-500 text-sm font-bold text-emerald-200";
                 }
-
-                feedback.className = "mt-5 p-4 rounded-2xl text-sm font-medium bg-rose-950/90 border border-rose-500/40 text-rose-200";
-                feedback.innerHTML = `💡 Nicht schlimm! Richtig ist: <strong class="text-white block mt-1">${correct}</strong><span class="text-xs text-rose-300/80 block mt-1">Kommt später in dieser Runde nochmal dran.</span>`;
-
-                mistakeIds.add(currentCard.id);
-                // Re-insert card 3-5 positions later in the queue (Spaced Repetition)
-                const missedCard = queue.shift();
-                const insertPos = Math.min(queue.length, 3 + Math.floor(Math.random() * 2));
-                queue.splice(insertPos, 0, missedCard);
+                markResult(false, correct);
             }
-
-            feedback.classList.remove('hidden');
-            document.getElementById('mc-next-btn').classList.remove('hidden');
-            updateProgressUI();
         }
 
-        function advanceQueue() {
-            loadNextItem();
-        }
-
-        // --- MODE B: ACTIVE TYPING ---
-        function setupTypingMode() {
+        function checkTypedAnswer() {
+            if (answered) return;
             const input = document.getElementById('type-input');
-            input.value = '';
-            input.disabled = false;
-            document.getElementById('check-type-btn').classList.remove('hidden');
-            document.getElementById('type-eval-box').classList.add('hidden');
-            setTimeout(() => input.focus(), 100);
-        }
+            const val = input.value.trim().toLowerCase();
+            if (!val) return;
 
-        function normalizeText(str) {
-            return str.toLowerCase()
-                .replace(/\(.*?\)/g, '') // remove grammar hints like (v), (adj), (sich)
-                .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, '')
-                .replace(/\s+/g, ' ')
-                .trim();
-        }
-
-        function handleTypeSubmit(e) {
-            e.preventDefault();
-            const input = document.getElementById('type-input');
-            const userVal = input.value.trim();
-            if (!userVal) return;
-
+            answered = true;
             input.disabled = true;
             document.getElementById('check-type-btn').classList.add('hidden');
 
-            const correctFull = getAnswerText(currentCard);
-            const normUser = normalizeText(userVal);
-            
-            // Split multiple translations by comma or slash to allow matching any single valid meaning
-            const validParts = correctFull.split(/[,\/]/).map(p => normalizeText(p)).filter(Boolean);
-            const isExactOrPartialMatch = validParts.some(part => 
-                part === normUser || (normUser.length >= 4 && part.includes(normUser))
-            );
+            const correctRaw = foreignToDe ? currentItem.de : currentItem.foreign;
+            const cleanCorrect = correctRaw.toLowerCase().replace(/\(.*?\)/g, '').trim();
+            const validParts = cleanCorrect.split(/[,/]/).map(s => s.trim()).filter(Boolean);
 
-            const banner = document.getElementById('type-result-banner');
-            const evalBox = document.getElementById('type-eval-box');
+            const isMatch = validParts.some(p => p === val || (val.length >= 3 && p.includes(val)));
+            markResult(isMatch, correctRaw);
+        }
 
-            if (isExactOrPartialMatch) {
-                banner.className = "p-4 rounded-2xl border bg-emerald-950/80 border-emerald-500/40 text-emerald-200 text-sm";
-                banner.innerHTML = `
-                    <div class="font-bold text-emerald-300 mb-1">✅ Stark! Das passt!</div>
-                    <div class="text-xs text-slate-300">Vollständige Lösung im Buch: <strong class="text-white">${correctFull}</strong></div>
-                `;
+        document.getElementById('type-input').addEventListener('keypress', e => { if (e.key === 'Enter') checkTypedAnswer(); });
+
+        function flipCard() { document.getElementById('flashcard-inner').classList.toggle('rotate-y-180'); }
+
+        function rateCard(knewIt) {
+            const current = queue.shift();
+            if (knewIt) mastered.add(current);
+            else queue.splice(Math.min(2, queue.length), 0, current);
+            updateStats();
+            loadNext();
+        }
+
+        function markResult(isCorrect, correct) {
+            const fb = document.getElementById('feedback-area');
+            const current = queue.shift();
+            const cheer = duolingoCheers[Math.floor(Math.random() * duolingoCheers.length)];
+
+            if (isCorrect) {
+                mastered.add(current);
+                fb.className = "mt-5 p-4 rounded-xl text-sm font-medium bg-emerald-950/80 border border-emerald-600/60 text-emerald-200";
+                fb.innerHTML = `✨ <strong>Richtig! (${correct})</strong><br><span class="text-xs text-emerald-300 font-normal">${cheer}</span>`;
             } else {
-                banner.className = "p-4 rounded-2xl border bg-slate-800 border-slate-700 text-slate-200 text-sm";
-                banner.innerHTML = `
-                    <div class="text-xs text-slate-400 mb-1">Vergleiche deine Antwort:</div>
-                    <div class="font-bold text-base text-emerald-300 mb-2">${correctFull}</div>
-                    <div class="text-xs text-slate-400">War deine Antwort sinngemäß richtig? Bewerte dich selbst:</div>
-                `;
+                queue.splice(Math.min(3, queue.length), 0, current);
+                fb.className = "mt-5 p-4 rounded-xl text-sm font-medium bg-rose-950/80 border border-rose-600/60 text-rose-200";
+                fb.innerHTML = `💡 <strong>Richtig wäre gewesen: <span class="underline">${correct}</span></strong><br><span class="text-xs text-rose-300 font-normal">${cheer}</span>`;
             }
 
-            evalBox.classList.remove('hidden');
+            fb.classList.remove('hidden');
+            document.getElementById('next-btn').classList.remove('hidden');
+            updateStats();
         }
 
-        function resolveTyping(wasCorrect) {
-            if (wasCorrect) {
-                masteredIds.add(currentCard.id);
-                queue.shift();
-            } else {
-                mistakeIds.add(currentCard.id);
-                const missedCard = queue.shift();
-                const insertPos = Math.min(queue.length, 3 + Math.floor(Math.random() * 2));
-                queue.splice(insertPos, 0, missedCard);
-            }
-            updateProgressUI();
-            loadNextItem();
+        function nextItem() { loadNext(); }
+
+        /* MODALS */
+        function openHomeGuide() { document.getElementById('home-modal').classList.remove('hidden'); }
+        function closeHomeGuide() { document.getElementById('home-modal').classList.add('hidden'); }
+        function openCustomModal() {
+            document.getElementById('custom-modal').classList.remove('hidden');
+            document.getElementById('custom-textarea').value = activeVocabulary.map(v => `${v.foreign} = ${v.de}`).join('\n');
+        }
+        function closeCustomModal() { document.getElementById('custom-modal').classList.add('hidden'); }
+
+        function saveCustomWords() {
+            const raw = document.getElementById('custom-textarea').value;
+            const lines = raw.split('\n');
+            const newItems = [];
+            lines.forEach(l => {
+                const parts = l.split('=');
+                if (parts.length >= 2) {
+                    const f = parts[0].trim();
+                    const d = parts[1].trim();
+                    if (f && d) newItems.push({ foreign: f, de: d, cat: "Eigenes Set" });
+                }
+            });
+            if (newItems.length === 0) return alert("Bitte Format beachten: Fremdsprache = Deutsch");
+
+            activeVocabulary = newItems;
+            setTitle = "Eigenes Set (" + newItems.length + ")";
+            localStorage.setItem('custom_vocab_master_v3', JSON.stringify({ title: setTitle, items: activeVocabulary }));
+            closeCustomModal();
+            resetProgress();
         }
 
-        // --- MODE C: FLASHCARDS ---
-        function setupFlashcard(item) {
-            isCardFlipped = false;
-            const inner = document.getElementById('flashcard-inner');
-            inner.classList.remove('rotate-y-180');
-
-            document.getElementById('fc-category').innerText = item.cat;
-            document.getElementById('fc-front-text').innerText = getPromptText(item);
-            document.getElementById('fc-back-sub').innerText = getPromptText(item);
-            document.getElementById('fc-back-text').innerText = getAnswerText(item);
-
-            const controls = document.getElementById('fc-controls');
-            controls.classList.add('opacity-40', 'pointer-events-none');
+        function copyCustomShareLink() {
+            navigator.clipboard.writeText(document.getElementById('custom-textarea').value).then(() => {
+                alert("Vokabelliste in die Zwischenablage kopiert!");
+            });
         }
 
-        function flipCard() {
-            isCardFlipped = !isCardFlipped;
-            const inner = document.getElementById('flashcard-inner');
-            const controls = document.getElementById('fc-controls');
-
-            if (isCardFlipped) {
-                inner.classList.add('rotate-y-180');
-                controls.classList.remove('opacity-40', 'pointer-events-none');
-            } else {
-                inner.classList.remove('rotate-y-180');
-            }
+        function loadDefaultSet() {
+            localStorage.removeItem('custom_vocab_master_v3');
+            activeVocabulary = [...vocabData[currentLang]];
+            setTitle = currentLang === 'en' ? "Psyche & Geist" : "Emociones (Spanisch)";
+            closeCustomModal();
+            resetProgress();
         }
 
-        function rateFlashcard(known) {
-            if (!isCardFlipped) return;
-            if (known) {
-                masteredIds.add(currentCard.id);
-                queue.shift();
-            } else {
-                mistakeIds.add(currentCard.id);
-                const missedCard = queue.shift();
-                const insertPos = Math.min(queue.length, 3 + Math.floor(Math.random() * 2));
-                queue.splice(insertPos, 0, missedCard);
-            }
-            updateProgressUI();
-            loadNextItem();
+        /* SCANNER */
+        function openScannerModal() {
+            document.getElementById('scanner-modal').classList.remove('hidden');
+            document.getElementById('scan-step-upload').classList.remove('hidden');
+            document.getElementById('scan-step-loading').classList.add('hidden');
+            document.getElementById('scan-step-review').classList.add('hidden');
+            document.getElementById('image-input').value = '';
         }
+        function closeScannerModal() { document.getElementById('scanner-modal').classList.add('hidden'); }
 
-        // --- RESULTS ---
-        function showResults() {
-            document.getElementById('training-screen').classList.add('hidden');
-            document.getElementById('result-screen').classList.remove('hidden');
-            document.getElementById('round-indicator').classList.add('hidden');
+        async function handleImageUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            document.getElementById('scan-step-upload').classList.add('hidden');
+            document.getElementById('scan-step-loading').classList.remove('hidden');
 
-            const total = activeDeck.length;
-            const mistakesCount = mistakeIds.size;
-            const firstTryCount = total - mistakesCount;
+            try {
+                const worker = await Tesseract.createWorker(['eng', 'deu', 'spa']);
+                const { data: { text } } = await worker.recognize(file);
+                await worker.terminate();
 
-            document.getElementById('stat-first-try').innerText = firstTryCount;
-            document.getElementById('stat-repeated').innerText = mistakesCount;
+                const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 2);
+                const pairs = [];
+                for (let i = 0; i < lines.length; i++) {
+                    const match = lines[i].match(/^([a-zA-ZáéíóúñÁÉÍÓÚÑ\s,'\-()]+?)\s*(?:[-–—=:]|\s{3,})\s*([a-zA-ZäöüÄÖÜßáéíóúñÁÉÍÓÚÑ\s,'\-()/]+)$/);
+                    if (match) pairs.push({ foreign: match[1].trim(), de: match[2].trim(), cat: "Foto-Scan" });
+                }
 
-            const diffBox = document.getElementById('difficult-words-box');
-            const diffList = document.getElementById('difficult-words-list');
-            const retryBtn = document.getElementById('retry-mistakes-btn');
-
-            if (mistakesCount > 0) {
-                diffBox.classList.remove('hidden');
-                retryBtn.classList.remove('hidden');
-                diffList.innerHTML = '';
-
-                ALL_VOCABULARY.filter(v => mistakeIds.has(v.id)).forEach(item => {
-                    const li = document.createElement('li');
-                    li.className = "flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 pb-2 border-b border-slate-800/80 last:border-0";
-                    li.innerHTML = `
-                        <span class="font-bold text-white">${item.en}</span>
-                        <span class="text-emerald-400 text-xs sm:text-sm">${item.de}</span>
-                    `;
-                    diffList.appendChild(li);
-                });
-            } else {
-                diffBox.classList.add('hidden');
-                retryBtn.classList.add('hidden');
-                document.getElementById('result-summary-text').innerText = 
-                    `Wahnsinn! Alle ${total} Vokabeln im ersten Durchgang fehlerfrei gewusst!`;
+                renderScannerReview(pairs.length > 0 ? pairs : [{ foreign: "Beispiel", de: "Example", cat: "Scan" }]);
+            } catch(err) {
+                alert("Fehler beim Erkennen.");
+                openScannerModal();
             }
         }
+
+        function renderScannerReview(pairs) {
+            document.getElementById('scan-step-loading').classList.add('hidden');
+            document.getElementById('scan-step-review').classList.remove('hidden');
+            const list = document.getElementById('extracted-list');
+            list.innerHTML = '';
+            pairs.forEach(p => addExtractedRow(p.foreign, p.de));
+            document.getElementById('detected-count-label').innerText = `${pairs.length} Paare erkannt`;
+        }
+
+        function addExtractedRow(f, d) {
+            const list = document.getElementById('extracted-list');
+            const row = document.createElement('div');
+            row.className = "grid grid-cols-[1fr_1fr_auto] gap-1.5 items-center bg-slate-950 p-2 rounded-xl border border-slate-800";
+            row.innerHTML = `
+                <input type="text" value="${f}" class="f-field bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none">
+                <input type="text" value="${d}" class="d-field bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-emerald-300 outline-none">
+                <button onclick="this.parentElement.remove()" class="text-slate-500 hover:text-rose-400 px-1">✕</button>
+            `;
+            list.appendChild(row);
+        }
+
+        function applyScannedVocab(merge) {
+            const rows = document.getElementById('extracted-list').children;
+            const newItems = [];
+            for (let r of rows) {
+                const f = r.querySelector('.f-field').value.trim();
+                const d = r.querySelector('.d-field').value.trim();
+                if (f && d) newItems.push({ foreign: f, de: d, cat: "Foto-Scan" });
+            }
+            if (newItems.length === 0) return alert("Bitte mindestens ein Paar eintragen.");
+
+            activeVocabulary = merge ? [...activeVocabulary, ...newItems] : newItems;
+            setTitle = "Foto-Scan (" + activeVocabulary.length + ")";
+            localStorage.setItem('custom_vocab_master_v3', JSON.stringify({ title: setTitle, items: activeVocabulary }));
+            closeScannerModal();
+            resetProgress();
+        }
+
+        init();
     </script>
 </body>
 </html>
